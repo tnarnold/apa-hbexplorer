@@ -5,6 +5,8 @@
  */
 package br.com.radaction.main;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -12,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -31,8 +34,9 @@ public class AppHbExplorer extends javax.swing.JFrame {
             + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     public AppHbExplorer() {
-
         initComponents();
+        
+        setIcon();
     }
 
     @SuppressWarnings("unchecked")
@@ -165,7 +169,7 @@ public class AppHbExplorer extends javax.swing.JFrame {
     private javax.swing.JTextField txtPort;
     private javax.swing.JTextPane txtpTextOfServer;
     // End of variables declaration//GEN-END:variables
-    
+
     private boolean validateForm() {
         Pattern pat = Pattern.compile(IPADDRESS_PATTERN);
         Matcher m = pat.matcher(txtIpAddr.getText());
@@ -259,5 +263,9 @@ public class AppHbExplorer extends javax.swing.JFrame {
         };
 
         worker.start();
+    }
+
+    private void setIcon() {
+        setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/hblogoicon.png")));
     }
 }
