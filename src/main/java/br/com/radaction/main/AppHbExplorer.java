@@ -199,6 +199,13 @@ public class AppHbExplorer extends javax.swing.JFrame {
                                     if (!txtpTextOfServer.getText().contains(hbContent)) {
                                         sd.insertString(sd.getLength(), hbContent + "\n", null);
                                     }
+                                } else {
+                                    JOptionPane.showMessageDialog(rootPane, "Not vulnerable or unreachable!");
+                                    txtIpAddr.requestFocus();
+                                    tbtStartStop.setSelected(false);
+                                    tbtStartStop.setText("Start");
+                                    continueThread = false;
+                                    Thread.currentThread().interrupt();
                                 }
                                 Thread.sleep(1000);
                             }
