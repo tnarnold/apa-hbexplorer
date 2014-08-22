@@ -206,17 +206,17 @@ public class HeartBleed {
         return bb.array();
     }
 
-    /*
-     * Constructs a tls packet out of the raw DataInputStream
+    /**
+     * Constructs a TLS packet out of the raw DataInputStream
      * (For easy reading)
+     * SSL/TLS record headers are 5 bytes in length
+     * From http://pic.dhe.ibm.com/infocenter/tpfhelp/current/index.jsp?topic=%2Fcom.ibm.ztpf-ztpfdf.doc_put.cur%2Fgtps5%2Fs5rcd.html
+     * 0 type
+     * 1-2 version
+     * 3-4 length
+     * @param in InputStream Object 
      */
     private static TLSmsg readPacket(InputStream in) throws IOException {
-        /*ssl/tls record headers are 5 bytes in length
-         *From http://pic.dhe.ibm.com/infocenter/tpfhelp/current/index.jsp?topic=%2Fcom.ibm.ztpf-ztpfdf.doc_put.cur%2Fgtps5%2Fs5rcd.html
-         *0 type
-         *1-2 version
-         *3-4 length
-         */
         byte[] header = new byte[5];
         in.read(header);
 
